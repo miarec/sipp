@@ -1,0 +1,25 @@
+#!/bin/sh
+# This regression test is a part of SIPp.
+# An offer in a multipart body, as a SIPREC INVITE has it, is an offer: the
+# offerer sends SRTP with the a=crypto line that the answer takes, here the
+# second one. SIPp took a multipart offer that it sent for no offer, then
+# the answer for an offer, and kept sending with the first line's key.
+. "`dirname "$0"`/../functions"; init
+
+sippbg -sf uas.xml -i 127.0.0.1 -p 26500 -m 1 \
+    -min_rtp_port 26510 -max_rtp_port 26519 -timeout 10
+uas=$pid
+sippfg -sf uac.xml -i 127.0.0.1 -p 26501 -m 1 \
+    -min_rtp_port 26520 -max_rtp_port 26529 \
+    127.0.0.1:26500 -timeout 10 >/dev/null 2>&1
+status=$?
+wait $uas
+uas_status=$?
+
+if test $status -ne 0; then
+    fail "the UAC failed with $status: the echo of its SRTP didn't come back"
+elif test $uas_status -ne 0; then
+    fail "the UAS failed with $uas_status"
+else
+    ok
+fi

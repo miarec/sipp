@@ -392,6 +392,14 @@ static bool is_sdp_content_type(std::string_view ct)
     return !*sdp;
 }
 
+/* Does a message with this Content-Type carry an SDP: an application/sdp
+ * body, or a multipart one with an application/sdp part, such as a SIPREC
+ * INVITE with its metadata? An offer or an answer either way. */
+static bool has_sdp_body(std::string_view ct, const char *msg)
+{
+    return is_sdp_content_type(ct) || (ct.find("multipart/") != std::string_view::npos && strstr(msg, "application/sdp"));
+}
+
 static std::string find_in_sdp(std::string_view pattern, std::string_view msg)
 {
     std::string_view::size_type begin, end;
@@ -3573,7 +3581,7 @@ std::string call::buildSendingMessage(SendingMessage *src, int P_index, char *sc
     /* An SDP is an offer or an answer, whether or not a [len] or an
      * [authentication] had its body found above */
     if (out.find("\r\n\r\n") != std::string::npos &&
-        is_sdp_content_type(get_header_content(out.c_str(), "Content-Type:").view())) {
+        has_sdp_body(get_header_content(out.c_str(), "Content-Type:").view(), out.c_str())) {
         if (getSessionStateCurrent() == eNoSession)
         {
             logSrtpInfo("call::createSendingMessage():  Switching session state:  eNoSession --> eOfferSent\n");
@@ -4303,8 +4311,7 @@ bool call::process_incoming(const char* msg, const struct sockaddr_storage* src,
      * media too, for the crypto keywords of the next SDP. */
     const header_value content_type = get_header_content(msg, "Content-Type:");
     const std::string_view ct_hdr = content_type.view();
-    bool has_sdp_content = is_sdp_content_type(ct_hdr) ||
-                           (ct_hdr.find("multipart/") != std::string_view::npos && strstr(msg, "application/sdp"));
+    bool has_sdp_content = has_sdp_body(ct_hdr, msg);
     if (has_sdp_content && !sdp_read && !curmsg->ignoresdp) {
         int audio_port = 0;
         int video_port = 0;
