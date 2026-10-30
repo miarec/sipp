@@ -1,0 +1,38 @@
+#!/bin/sh
+# This regression test is a part of SIPp.
+# -rtp_seq: the first RTP sequence number. The UAC starts at 65500, so its
+# sequence number wraps after 36 packets, and its SRTP rollover counter
+# goes to 1. The UAS decrypts and echoes the SRTP, and the UAC checks the
+# echo: a wrong rollover counter on either side fails the authentication
+# of every packet after the wrap.
+. "`dirname "$0"`/../functions"; init
+
+rm -f debugafile
+sippbg -sf uas.xml -i 127.0.0.1 -p 26530 -m 1 \
+    -min_rtp_port 26540 -max_rtp_port 26549 -timeout 10
+uas=$pid
+sippfg -sf uac.xml -i 127.0.0.1 -p 26531 -m 1 \
+    -min_rtp_port 26550 -max_rtp_port 26559 -rtp_seq 65500 -rtpcheck_debug \
+    127.0.0.1:26530 -timeout 10 >/dev/null 2>&1
+status=$?
+wait $uas
+uas_status=$?
+
+# The sequence numbers of the packets that the UAC sent, from the RTP
+# header in each send line of its debug file: 80 00 <seq>.
+seqs=`sed -n 's/^.*SIPP SUCCESS SEND LOG: .*\[80..\(....\).*$/\1/p' debugafile 2>/dev/null`
+first=`echo "$seqs" | head -n 1`
+wrapped=`echo "$seqs" | grep -c '^0000$'`
+rm -f debugafile
+
+if test $status -ne 0; then
+    fail "the UAC failed with $status: the echo of its SRTP didn't come back"
+elif test $uas_status -ne 0; then
+    fail "the UAS failed with $uas_status"
+elif test "$first" != "FFDC"; then
+    fail "the first sequence number is $first, not FFDC (65500)"
+elif test "$wrapped" -ne 1; then
+    fail "the sequence number didn't wrap to 0000"
+else
+    ok
+fi

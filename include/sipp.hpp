@@ -285,6 +285,8 @@ MAYBE_EXTERN int                hasMedia                DEFVAL(0);
 MAYBE_EXTERN int                min_rtp_port            DEFVAL(DEFAULT_MIN_RTP_PORT);
 MAYBE_EXTERN int                max_rtp_port            DEFVAL(DEFAULT_MAX_RTP_PORT);
 MAYBE_EXTERN int                rtp_default_payload     DEFVAL(DEFAULT_RTP_PAYLOAD);
+/* -rtp_seq: the first RTP sequence number of each stream */
+MAYBE_EXTERN int                rtp_first_seq           DEFVAL(0);
 MAYBE_EXTERN int                rtp_tasks_per_thread    DEFVAL(DEFAULT_RTP_THREADTASKS);
 MAYBE_EXTERN int                rtp_buffsize            DEFVAL(65536);
 MAYBE_EXTERN bool               rtpcheck_debug          DEFVAL(0);

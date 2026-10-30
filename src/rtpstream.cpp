@@ -2254,6 +2254,8 @@ static taskentry_t* rtpstream_task(rtpstream_callinfo_t* callinfo)
     /* rtp stream members */
     taskinfo->audio_ssrc_id = callinfo->audio_ssrc_id;
     taskinfo->video_ssrc_id = callinfo->video_ssrc_id;
+    taskinfo->audio_seq_out = (unsigned short) rtp_first_seq;
+    taskinfo->video_seq_out = (unsigned short) rtp_first_seq;
     /* no echo yet: not even of the packet before the first (seq 0) */
     taskinfo->audio_seq_echoed = (unsigned short) (taskinfo->audio_seq_out - 2);
 

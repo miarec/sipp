@@ -708,6 +708,7 @@ struct sipp_option options_table[] = {
     {"max_rtp_port", "Maximum port number for RTP socket range.", SIPP_OPTION_INT, &max_rtp_port, 1},
     {"mp", "Sets -min_rtp_port for backwards compatibility.", SIPP_OPTION_INT, &min_rtp_port, 1},
     {"rtp_payload", "RTP default payload type.", SIPP_OPTION_INT, &rtp_default_payload, 1},
+    {"rtp_seq", "The first RTP sequence number of each stream, 0 to 65535 (default: 0). A value close to 65535 makes the sequence number wrap, and the SRTP rollover counter grow, within seconds.", SIPP_OPTION_INT, &rtp_first_seq, 1},
     {"rtp_threadtasks", "RTP number of playback tasks (calls) per thread (default: 50).", SIPP_OPTION_INT, &rtp_tasks_per_thread, 1},
     {"rtp_buffsize", "Set the rtp socket send/receive buffer size.", SIPP_OPTION_INT, &rtp_buffsize, 1},
     {"rtpcheck_debug", "Write RTP check debug information to file", SIPP_OPTION_SETFLAG, &rtpcheck_debug, 1},
@@ -2498,6 +2499,10 @@ int main(int argc, char *argv[])
         global_ssrc_id = rand();
     } else {
         global_ssrc_id = 0xCA110000;
+    }
+
+    if (rtp_first_seq < 0 || rtp_first_seq > 65535) {
+        ERROR("-rtp_seq must be between 0 and 65535, not %d", rtp_first_seq);
     }
 
     if ((extendedTwinSippMode && !slave_masterSet) || (!extendedTwinSippMode && slave_masterSet)) {
